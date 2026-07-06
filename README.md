@@ -34,7 +34,7 @@ Open http://localhost:3000. Without a `.env.local` file, every page renders usin
    - `supabase/storage.sql` — the `post-images` storage bucket and its policies
    - `supabase/seed.sql` — 13 sample movies (Interstellar, The Dark Knight, Spirited Away, etc.)
 
-### Enable Google OAuth
+### Enable Google's OAuth
 
 1. In Supabase: **Authentication > Providers > Google** — toggle it on.
 2. Create OAuth credentials in the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) (OAuth client ID, type "Web application").
