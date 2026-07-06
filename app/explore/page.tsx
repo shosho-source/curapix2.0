@@ -6,7 +6,7 @@ import { BottomNav } from "@/components/BottomNav";
 import type { Movie } from "@/lib/types";
 
 async function getMovies(): Promise<Movie[]> {
-  const supabase = createClient();
+  const supabase = await createClient();
   if (!supabase) return MOCK_MOVIES.slice(0, 5);
 
   const { data, error } = await supabase

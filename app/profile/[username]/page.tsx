@@ -1,9 +1,10 @@
 import Image from "next/image";
-import { Plus, MoreVertical, UserPlus, Share2, Pencil } from "lucide-react";
+import { MoreVertical, UserPlus, Share2, Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { MOCK_POSTS, MOCK_PROFILES } from "@/lib/mock-data";
 import { BottomNav } from "@/components/BottomNav";
 import { ProfileTabs } from "@/components/ProfileTabs";
+import { NewPostButton } from "@/components/NewPostButton";
 import type { Profile, Post } from "@/lib/types";
 
 const HIGHLIGHTS = [
@@ -19,7 +20,7 @@ async function getProfile(username: string): Promise<{
   posts: Post[];
   stats: { posts: number; followers: number; following: number };
 }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   if (!supabase) {
     return {
       profile: MOCK_PROFILES[0],
@@ -64,9 +65,10 @@ async function getProfile(username: string): Promise<{
 export default async function ProfilePage({
   params,
 }: {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }) {
-  const { profile, posts, stats } = await getProfile(params.username);
+  const { username } = await params;
+  const { profile, posts, stats } = await getProfile(username);
 
   return (
     <div className="min-h-dvh bg-white pb-24">
@@ -76,9 +78,7 @@ export default async function ProfilePage({
           <span className="text-xs text-muted">▾</span>
         </button>
         <div className="flex items-center gap-2">
-          <button className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center">
-            <Plus size={18} className="text-primary-600" />
-          </button>
+          <NewPostButton />
           <button className="w-9 h-9 flex items-center justify-center">
             <MoreVertical size={18} />
           </button>

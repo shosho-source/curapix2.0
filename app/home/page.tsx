@@ -1,12 +1,13 @@
-import { Bell, Plus, MoreVertical, ChevronDown } from "lucide-react";
+import { Bell, MoreVertical, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { MOCK_POSTS } from "@/lib/mock-data";
 import { FeedTabs } from "@/components/FeedTabs";
 import { BottomNav } from "@/components/BottomNav";
+import { NewPostButton } from "@/components/NewPostButton";
 import type { Post } from "@/lib/types";
 
 async function getPosts(): Promise<Post[]> {
-  const supabase = createClient();
+  const supabase = await createClient();
   if (!supabase) return MOCK_POSTS;
 
   const { data, error } = await supabase
@@ -36,12 +37,7 @@ export default async function HomePage() {
             <Bell size={17} />
             <ChevronDown size={14} className="text-muted" />
           </button>
-          <button
-            aria-label="New post"
-            className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center"
-          >
-            <Plus size={18} className="text-primary-600" />
-          </button>
+          <NewPostButton />
           <button aria-label="More" className="w-9 h-9 flex items-center justify-center">
             <MoreVertical size={18} />
           </button>

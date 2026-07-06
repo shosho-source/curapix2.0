@@ -1,25 +1,82 @@
-"use client";
-
-import { useState } from "react";
-import Image from "next/image";
-import { Search } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 import { MOCK_CONVERSATIONS, MOCK_PROFILES } from "@/lib/mock-data";
 import { BottomNav } from "@/components/BottomNav";
+import { ConversationList } from "@/components/ConversationList";
+import type { Conversation, Profile } from "@/lib/types";
 
-const TABS = ["Favourites", "General", "Requests"] as const;
+async function getConversations(): Promise<{ me: Profile; conversations: Conversation[] }> {
+  const supabase = await createClient();
+  if (!supabase) {
+    return { me: MOCK_PROFILES[0], conversations: MOCK_CONVERSATIONS };
+  }
 
-function timeAgo(iso: string) {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 60) return `${mins}m`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d`;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { me: MOCK_PROFILES[0], conversations: MOCK_CONVERSATIONS };
+  }
+
+  const { data: me } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  const { data: rows } = await supabase
+    .from("conversation_participants")
+    .select(
+      "conversation:conversations(id, is_group, title, updated_at), conversation_id"
+    )
+    .eq("user_id", user.id);
+
+  const conversations: Conversation[] = [];
+
+  for (const row of rows ?? []) {
+    const convoId = row.conversation_id as string;
+
+    const { data: others } = await supabase
+      .from("conversation_participants")
+      .select("users(id, username, display_name, avatar_url)")
+      .eq("conversation_id", convoId)
+      .neq("user_id", user.id);
+
+    const { data: lastMessage } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("conversation_id", convoId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { count: unreadCount } = await supabase
+      .from("messages")
+      .select("*", { count: "exact", head: true })
+      .eq("conversation_id", convoId)
+      .is("read_at", null)
+      .neq("sender_id", user.id);
+
+    conversations.push({
+      id: convoId,
+      is_group: false,
+      title: null,
+      updated_at: lastMessage?.created_at ?? new Date().toISOString(),
+      participants: (others ?? []).map((o) => o.users) as unknown as Conversation["participants"],
+      last_message: lastMessage ?? null,
+      unread_count: unreadCount ?? 0,
+    });
+  }
+
+  conversations.sort(
+    (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+  );
+
+  return { me: (me as Profile) ?? MOCK_PROFILES[0], conversations };
 }
 
-export default function MessagesPage() {
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Favourites");
-  const me = MOCK_PROFILES[0];
+export default async function MessagesPage() {
+  const { me, conversations } = await getConversations();
 
   return (
     <div className="min-h-dvh bg-white pb-24">
@@ -30,88 +87,7 @@ export default function MessagesPage() {
 
       <main className="px-4">
         <h1 className="text-3xl font-extrabold mb-4">Messages</h1>
-
-        <div className="flex items-center gap-2 bg-primary-50 rounded-full px-4 py-3 mb-5">
-          <Search size={18} className="text-muted" />
-          <input
-            placeholder="Search"
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
-          />
-        </div>
-
-        <div className="flex gap-4 overflow-x-auto scrollbar-none mb-5">
-          <div className="flex flex-col items-center gap-1 shrink-0">
-            <div className="w-14 h-14 rounded-full ring-2 ring-primary-200 overflow-hidden relative">
-              <Image src={me.avatar_url ?? ""} alt="You" fill className="object-cover" />
-            </div>
-            <p className="text-[11px] text-muted">Your note</p>
-          </div>
-          {MOCK_PROFILES.slice(1).concat(MOCK_PROFILES.slice(1)).map((p, i) => (
-            <div key={p.id + i} className="flex flex-col items-center gap-1 shrink-0">
-              <div className="w-14 h-14 rounded-full ring-2 ring-primary-100 overflow-hidden relative">
-                <Image src={p.avatar_url ?? ""} alt={p.display_name} fill className="object-cover" />
-                <span
-                  className={`absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full ring-2 ring-white ${
-                    i % 3 === 0 ? "bg-slate-400" : "bg-green-500"
-                  }`}
-                />
-              </div>
-              <p className="text-[11px] text-muted">{p.display_name}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex bg-primary-50 rounded-full p-1 mb-3">
-          {TABS.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`flex-1 text-sm font-medium py-2 rounded-full transition-colors ${
-                tab === t ? "bg-white text-primary-600 shadow-sm" : "text-muted"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-
-        <div className="divide-y divide-primary-50">
-          {MOCK_CONVERSATIONS.concat(
-            MOCK_CONVERSATIONS.map((c, i) => ({
-              ...c,
-              id: c.id + "-x" + i,
-              participants: [MOCK_PROFILES[(i + 2) % MOCK_PROFILES.length]],
-            }))
-          ).map((c) => {
-            const p = c.participants[0];
-            const isTyping = c.id.endsWith("-x1");
-            return (
-              <div key={c.id} className="flex items-center gap-3 py-3">
-                <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0">
-                  <Image src={p.avatar_url ?? ""} alt={p.display_name} fill className="object-cover" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate">{p.display_name}</p>
-                  <p
-                    className={`text-sm truncate ${
-                      isTyping ? "text-primary-500 italic" : "text-muted"
-                    }`}
-                  >
-                    {isTyping ? "Typing..." : c.last_message?.body}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-1.5 shrink-0">
-                  <span className="text-xs text-muted">
-                    {c.last_message ? timeAgo(c.last_message.created_at) : ""}
-                  </span>
-                  {c.unread_count > 0 && (
-                    <span className="w-2 h-2 rounded-full bg-primary-500" />
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <ConversationList me={me} conversations={conversations} />
       </main>
 
       <BottomNav avatarUrl={me.avatar_url} username={me.username} />

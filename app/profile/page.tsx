@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MOCK_PROFILES } from "@/lib/mock-data";
 
 export default async function ProfileIndexPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   if (supabase) {
     const {

@@ -1,4 +1,4 @@
-import type { Conversation, Movie, Post, Profile } from "./types";
+import type { Conversation, Message, Movie, Post, Profile } from "./types";
 
 export const MOCK_MOVIES: Movie[] = [
   {
@@ -191,7 +191,159 @@ export const MOCK_PROFILES: Profile[] = [
     genre_prefs: ["Action", "Sci-Fi"],
     created_at: new Date().toISOString(),
   },
+  {
+    id: "u4",
+    username: "ava_m",
+    display_name: "Ava",
+    avatar_url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200",
+    cover_avatar_url: null,
+    bio: null,
+    genre_prefs: ["Rom-Com", "Comedy"],
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "u5",
+    username: "liam_c",
+    display_name: "Liam",
+    avatar_url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200",
+    cover_avatar_url: null,
+    bio: null,
+    genre_prefs: ["Thriller", "Mystery"],
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "u6",
+    username: "sophia_l",
+    display_name: "Sophia",
+    avatar_url: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200",
+    cover_avatar_url: null,
+    bio: null,
+    genre_prefs: ["Drama"],
+    created_at: new Date().toISOString(),
+  },
 ];
+
+export const MOCK_CONVERSATIONS: Conversation[] = [
+  {
+    id: "c1",
+    is_group: false,
+    title: null,
+    updated_at: new Date(Date.now() - 2 * 60e3).toISOString(),
+    participants: [MOCK_PROFILES[1]],
+    last_message: {
+      id: "msg1",
+      conversation_id: "c1",
+      sender_id: "u2",
+      body: "Hey! Are we still on for tonight?",
+      created_at: new Date(Date.now() - 2 * 60e3).toISOString(),
+      read_at: null,
+    },
+    unread_count: 1,
+  },
+  {
+    id: "c2",
+    is_group: false,
+    title: null,
+    updated_at: new Date(Date.now() - 3600e3).toISOString(),
+    participants: [MOCK_PROFILES[2]],
+    last_message: {
+      id: "msg2",
+      conversation_id: "c2",
+      sender_id: "u3",
+      body: "That movie was amazing!",
+      created_at: new Date(Date.now() - 3600e3).toISOString(),
+      read_at: null,
+    },
+    unread_count: 1,
+  },
+  {
+    id: "c3",
+    is_group: false,
+    title: null,
+    updated_at: new Date(Date.now() - 3 * 3600e3).toISOString(),
+    participants: [MOCK_PROFILES[3]],
+    last_message: {
+      id: "msg3",
+      conversation_id: "c3",
+      sender_id: "u4",
+      body: "Thanks for the recommendation 💜",
+      created_at: new Date(Date.now() - 3 * 3600e3).toISOString(),
+      read_at: new Date().toISOString(),
+    },
+    unread_count: 0,
+  },
+  {
+    id: "c4",
+    is_group: false,
+    title: null,
+    updated_at: new Date(Date.now() - 5 * 3600e3).toISOString(),
+    participants: [MOCK_PROFILES[4]],
+    last_message: {
+      id: "msg4",
+      conversation_id: "c4",
+      sender_id: "u5",
+      body: "See you soon!",
+      created_at: new Date(Date.now() - 5 * 3600e3).toISOString(),
+      read_at: new Date().toISOString(),
+    },
+    unread_count: 0,
+  },
+  {
+    id: "c5",
+    is_group: false,
+    title: null,
+    updated_at: new Date(Date.now() - 86400e3).toISOString(),
+    participants: [MOCK_PROFILES[5]],
+    last_message: {
+      id: "msg5",
+      conversation_id: "c5",
+      sender_id: "u6",
+      body: "Let me know what you think",
+      created_at: new Date(Date.now() - 86400e3).toISOString(),
+      read_at: new Date().toISOString(),
+    },
+    unread_count: 0,
+  },
+];
+
+export const MOCK_MESSAGES: Record<string, Message[]> = {
+  c1: [
+    {
+      id: "msg1-a",
+      conversation_id: "c1",
+      sender_id: "u1",
+      body: "Hey! Still on for the movie tonight?",
+      created_at: new Date(Date.now() - 20 * 60e3).toISOString(),
+      read_at: new Date().toISOString(),
+    },
+    {
+      id: "msg1",
+      conversation_id: "c1",
+      sender_id: "u2",
+      body: "Hey! Are we still on for tonight?",
+      created_at: new Date(Date.now() - 2 * 60e3).toISOString(),
+      read_at: null,
+    },
+  ],
+  c2: [
+    {
+      id: "msg2-a",
+      conversation_id: "c2",
+      sender_id: "u1",
+      body: "Did you catch Interstellar yet?",
+      created_at: new Date(Date.now() - 2 * 3600e3).toISOString(),
+      read_at: new Date().toISOString(),
+    },
+    {
+      id: "msg2",
+      conversation_id: "c2",
+      sender_id: "u3",
+      body: "That movie was amazing!",
+      created_at: new Date(Date.now() - 3600e3).toISOString(),
+      read_at: null,
+    },
+  ],
+};
 
 export const MOCK_POSTS: Post[] = [
   {
@@ -237,41 +389,6 @@ export const MOCK_POSTS: Post[] = [
     share_count: 98,
     bookmark_count: 55,
     author: MOCK_PROFILES[0],
-  },
-];
-
-export const MOCK_CONVERSATIONS: Conversation[] = [
-  {
-    id: "c1",
-    is_group: false,
-    title: null,
-    updated_at: new Date(Date.now() - 2 * 60e3).toISOString(),
-    participants: [MOCK_PROFILES[1]],
-    last_message: {
-      id: "msg1",
-      conversation_id: "c1",
-      sender_id: "u2",
-      body: "Hey! Are we still on for tonight?",
-      created_at: new Date(Date.now() - 2 * 60e3).toISOString(),
-      read_at: null,
-    },
-    unread_count: 1,
-  },
-  {
-    id: "c2",
-    is_group: false,
-    title: null,
-    updated_at: new Date(Date.now() - 3600e3).toISOString(),
-    participants: [MOCK_PROFILES[2]],
-    last_message: {
-      id: "msg2",
-      conversation_id: "c2",
-      sender_id: "u3",
-      body: "That movie was amazing!",
-      created_at: new Date(Date.now() - 3600e3).toISOString(),
-      read_at: null,
-    },
-    unread_count: 1,
   },
 ];
 

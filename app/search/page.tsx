@@ -9,11 +9,11 @@ import {
   Play,
   Heart,
   Bookmark,
-  Plus,
   MoreVertical,
 } from "lucide-react";
 import { MOCK_MOVIES, GENRES } from "@/lib/mock-data";
 import { BottomNav } from "@/components/BottomNav";
+import { NewPostButton } from "@/components/NewPostButton";
 
 const FILTERS = ["Trending", "New releases", "Top rated"] as const;
 
@@ -37,12 +37,7 @@ export default function SearchPage() {
       <header className="flex items-center justify-between px-4 pt-5 pb-2">
         <h1 className="text-xl font-extrabold">CuraPix</h1>
         <div className="flex items-center gap-2">
-          <button
-            aria-label="New post"
-            className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center"
-          >
-            <Plus size={18} className="text-primary-600" />
-          </button>
+          <NewPostButton />
           <button aria-label="More" className="w-9 h-9 flex items-center justify-center">
             <MoreVertical size={18} />
           </button>

@@ -4,6 +4,12 @@ A social movie discovery and curation app. Next.js 14 (App Router) + TypeScript 
 
 Pages: Landing/Onboarding, Home Feed, Explore (swipe deck), Search, Messages, Profile.
 
+## Security note
+
+This project runs **Next.js 15.5.18 + React 19**. Earlier drafts used Next 14.2.x, but as of the May 2026 Next.js security release, patches are no longer being issued for the 14.x line, so 15.5.18 (a currently-patched release) is used instead. This required two Next 15 API changes already applied in the code: `cookies()` in `lib/supabase/server.ts` is now awaited, and dynamic route `params` (in `profile/[username]` and `messages/[id]`) are now a `Promise` that's awaited before use.
+
+If `npm audit` ever shows a `postcss` advisory nested under `node_modules/next/node_modules/postcss`, that's Next's own internal build tooling, not your app's runtime CSS pipeline — check for a newer Next.js patch release rather than force-downgrading.
+
 The app runs out of the box with mock data even without Supabase configured, so you can preview the UI immediately, then wire up the backend when ready.
 
 ## 1. Run locally
@@ -25,6 +31,7 @@ Open http://localhost:3000. Without a `.env.local` file, every page renders usin
    ```
 4. In the Supabase dashboard, open the **SQL Editor** and run, in order:
    - `supabase/schema.sql` — tables, triggers, and Row Level Security policies
+   - `supabase/storage.sql` — the `post-images` storage bucket and its policies
    - `supabase/seed.sql` — 13 sample movies (Interstellar, The Dark Knight, Spirited Away, etc.)
 
 ### Enable Google OAuth
@@ -37,21 +44,9 @@ Open http://localhost:3000. Without a `.env.local` file, every page renders usin
 
 ### Set up Storage for post images
 
-1. In Supabase: **Storage > Create a new bucket** named `post-images`. Make it public (read).
-2. Add policies so users can only upload/manage their own files, e.g. in the SQL editor:
-   ```sql
-   create policy "public read access"
-     on storage.objects for select
-     using (bucket_id = 'post-images');
+Run `supabase/storage.sql` in the SQL editor — it creates the public `post-images` bucket and policies so users can only upload/manage files under their own `<user_id>/` folder (which is exactly how `components/NewPostModal.tsx` uploads).
 
-   create policy "users upload to own folder"
-     on storage.objects for insert
-     with check (
-       bucket_id = 'post-images'
-       and (storage.foldername(name))[1] = auth.uid()::text
-     );
-   ```
-   Upload images under a path like `post-images/<user_id>/<filename>` so this policy applies correctly.
+If you'd rather do it by hand: **Storage > Create a new bucket** named `post-images`, make it public, then add the same policies from `storage.sql`.
 
 ### Create sample users + posts (optional, for a populated demo)
 
@@ -97,5 +92,7 @@ middleware.ts                 Refreshes Supabase auth session cookies
 ## Notes
 
 - Pages are Server Components that fetch from Supabase when configured, and fall back to `lib/mock-data.ts` otherwise — remove the fallback branches once your backend is populated, if you'd rather surface errors directly.
-- Interactive pieces (swipe deck, like/bookmark toggles, tabs, search filters) are Client Components; everything else stays server-rendered.
-- Real-time chat: subscribe to `public.messages` via Supabase Realtime (already added to the `supabase_realtime` publication in `schema.sql`) inside the messages page/component to push new messages live.
+- Interactive pieces (swipe deck, like/bookmark toggles, tabs, search filters, new post modal, chat) are Client Components; everything else stays server-rendered.
+- **New post creation**: the "+" button on Home, Search, and Profile opens `components/NewPostModal.tsx`, which uploads images to the `post-images` Storage bucket under `<user_id>/<uuid>.<ext>` and inserts a row into `public.posts`. Run `supabase/storage.sql` first so the bucket and its policies exist.
+- **Realtime chat**: `/messages` lists conversations from `public.conversations` / `conversation_participants` / `messages`; tapping one opens `/messages/[id]`, which renders `components/ChatWindow.tsx`. It loads message history on the server, then subscribes to `postgres_changes` INSERT events on `public.messages` (already added to the `supabase_realtime` publication in `schema.sql`) so new messages from the other participant appear live, and sends new messages with an optimistic UI update.
+- There's no "start a new conversation" UI yet — to test chat, insert a `conversations` row and two matching `conversation_participants` rows manually (or add a "new message" flow as a follow-up).
